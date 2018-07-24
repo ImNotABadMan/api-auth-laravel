@@ -1,0 +1,28 @@
+{
+    "name": "binz/jwt",
+    "description": "My Laravel local jwt auth",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "binz"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload":{
+        "psr-4":{
+            "Jwt\\": "packages/binz/jwt/src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Jwt\\JwtServiceProvider"
+            ],
+            "aliases": {
+                "Jwt": "Jwt\\BJwtAuthFacade"
+            }
+        }
+    }
+}
