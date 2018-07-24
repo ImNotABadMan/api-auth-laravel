@@ -10,14 +10,6 @@ namespace Jwt;
 
 Class BJwtAuth extends BaseBJwtAuth
 {
-
-
-
-    public function isAuth()
-    {
-        return 'isAuth';
-    }
-
     public static function testFacade()
     {
         return 'JwtFacade';

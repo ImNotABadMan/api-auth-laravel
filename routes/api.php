@@ -18,4 +18,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::get('login', 'AuthController@login');
+Route::get('whoiam', 'AuthController@whoiam');
+Route::get('whoiamDecode', 'AuthController@whoiamDecode');
 

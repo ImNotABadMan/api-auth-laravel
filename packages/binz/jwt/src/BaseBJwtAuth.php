@@ -30,7 +30,7 @@ class BaseBJwtAuth
 
     protected $_alg;
 
-    protected $_exp;
+    protected $_exp = 3600;
 
     protected $_algMap = [
         'HS256' => 'sha256'
@@ -59,6 +59,15 @@ class BaseBJwtAuth
         return null;
     }
 
+    public function __set($name, $value)
+    {
+        // TODO: Implement __set() method.
+        if( is_string($name) ){
+            $attr = '_' . $name;
+            $this->$attr = $value;
+        }
+    }
+
     public function getToken($header, $payload, $config = [])
     {
         if( !empty($config) && isset($config['jwt_secret']) ){
@@ -68,45 +77,66 @@ class BaseBJwtAuth
         $this->_alg = $header['alg'];
         $this->_exp = $payload['exp'];
 
+        $token = $this->encodeToken($header, $payload);
 
-
-        return 'getToken';
+        return $token;
     }
 
-    public function decodeToken($token)
+    /**
+     * $flag json_decode 的第二格参数
+    */
+    public function decodeToken($token, $flag = false)
     {
-        list($header, $paylood, $signature) = explode('.', $token);
+        list($header, $payload, $signature) = explode('.', $token);
 
+        $headerDecode = json_decode(base64_decode($header), $flag);
+        $payloadDecode = json_decode(base64_decode($payload), $flag);
+
+        return [
+            'header'    => $headerDecode,
+            'payload'   => $payloadDecode,
+            'signature' => $signature
+        ];
     }
 
-    public function encodeToken()
+    public function encodeToken($header, $payload)
     {
+        $headerEncode = base64_encode(json_encode($header));
+        $payloadEncode = base64_encode(json_encode($payload));
 
+        $encode = $headerEncode . '.'. $payloadEncode;
+        $signature = hash_hmac($this->_algMap[$header['alg']], $encode, $this->_config['jwt_secret']);
+
+        return $headerEncode . '.' . $payloadEncode . '.' . $signature;
     }
 
     public function outOfTime()
     {
-        return $this->_payload['iat'] + $this->_payload['exp'] < time();
+        return strtotime($this->_payload['iat']) + $this->_payload['exp'] < time();
     }
 
     public function isAuth($token)
     {
-        list($header, $payload, $signature) = explode('.', $token);
+        $tokenDecode = $this->decodeToken($token, true);
+        $header = $tokenDecode['header'];
+        $payload = $tokenDecode['payload'];
+        $signature = $tokenDecode['signature'];
+//        list($header, $payload, $signature) = $tokenDecode;
 
         $this->_header['alg'] = $header['alg'];
         $this->_payload['iat'] = $payload['iat'];
         $this->_payload['exp'] = $payload['exp'];
+
         if( $this->outOfTime() ){
             return ['code' => 1, 'message' => 'token expired'];
         }
 
-        $headerDecode = json_decode(base64_decode($header));
 
         if( !isset($headerDecode['alg']) ){
             return false;
         }
 
-        $localSignature = hash_hmac($this->_algMap[$headerDecode['alg']],$header . '.' . $payload, config('jwt_sercret'));
+        $localSignature = hash_hmac($this->_algMap[$header['alg']],$header . '.' . $payload, $this->_config['jwt_secret']);
 
         if( strpos($signature, $localSignature) !== 0){
             return false;
@@ -115,3 +145,8 @@ class BaseBJwtAuth
         return true;
     }
 }
+
+
+
+
+
