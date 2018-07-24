@@ -9,6 +9,18 @@ use Jwt\BJwtAuth;
 
 class AuthController extends Controller
 {
+    private $_jwt;
+
+    public function __construct()
+    {
+        $this->_jwt = new BJwtAuth();
+        if( request('token') ){
+            if( !$this->_jwt->isAuth(request('token')) ){
+                return $this->jsonReturn(1, ' UnAuthorized');
+            }
+        }
+    }
+
     //
     public function login(Request $request)
     {

@@ -39,11 +39,6 @@ class BaseBJwtAuth
     public function __construct()
     {
         $this->_config = config('jwt');
-        if( request('token') ){
-            if( !$this->isAuth(request('token')) ){
-                return null;
-            }
-        }
     }
 
     public function __get($name)
@@ -123,17 +118,17 @@ class BaseBJwtAuth
     public function isAuth($token)
     {
         $tokenDecode = $this->decodeToken($token, true);
+//        list($header, $payload, $signature) = $tokenDecode;
         $header = $tokenDecode['header'];
         $payload = $tokenDecode['payload'];
         $signature = $tokenDecode['signature'];
-//        list($header, $payload, $signature) = $tokenDecode;
 
         $this->_header['alg'] = $header['alg'];
         $this->_payload['iat'] = $payload['iat'];
         $this->_payload['exp'] = $payload['exp'];
 
         if( $this->outOfTime() ){
-            return ['code' => 1, 'message' => 'token expired'];
+            return false;
         }
 
 
@@ -141,7 +136,7 @@ class BaseBJwtAuth
             return false;
         }
 
-        $localSignature = hash_hmac($this->_algMap[$header['alg']],$header . '.' . $payload, $this->_config['jwt_secret']);
+        $localSignature = hash_hmac($this->_algMap[$header['alg']], strrchr($token, '.'), $this->_config['jwt_secret']);
 
         if( strpos($signature, $localSignature) !== 0){
             return false;
