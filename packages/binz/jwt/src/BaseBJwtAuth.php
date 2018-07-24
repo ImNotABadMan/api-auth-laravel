@@ -39,6 +39,11 @@ class BaseBJwtAuth
     public function __construct()
     {
         $this->_config = config('jwt');
+        if( request('token') ){
+            if( !$this->isAuth(request('token')) ){
+                return null;
+            }
+        }
     }
 
     public function __get($name)
@@ -132,7 +137,7 @@ class BaseBJwtAuth
         }
 
 
-        if( !isset($headerDecode['alg']) ){
+        if( !isset($header['alg']) ){
             return false;
         }
 
