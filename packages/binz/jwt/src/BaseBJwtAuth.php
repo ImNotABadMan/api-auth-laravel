@@ -114,8 +114,8 @@ class BaseBJwtAuth
     {
         if( !$token ){
             $decode = $this->decodeToken($token);
+            $this->_payload = $decode['payload'];
         }
-        $this->_payload = $decode['payload'];
         return strtotime($this->_payload['iat']) + $this->_payload['exp'] < time();
     }
 
@@ -128,10 +128,6 @@ class BaseBJwtAuth
         $this->_header['alg'] = $decodeArr["header"]['alg'];
         $this->_payload['iat'] = $decodeArr["payload"]['iat'];
         $this->_payload['exp'] = $decodeArr["payload"]['exp'];
-
-        if( $this->outOfTime() ){
-            return false;
-        }
 
         if( !isset($decodeArr["header"]['alg']) ){
             return false;

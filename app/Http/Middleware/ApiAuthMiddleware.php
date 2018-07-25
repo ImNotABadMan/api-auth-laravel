@@ -8,6 +8,8 @@ use Jwt\BJwtAuth;
 
 class ApiAuthMiddleware
 {
+    private $_jwt;
+
     /**
      * Handle an incoming request.
      *
@@ -15,8 +17,6 @@ class ApiAuthMiddleware
      * @param  \Closure  $next
      * @return mixed
      */
-    private $_jwt;
-
     public function handle($request, Closure $next)
     {
         $tokenName = config('jwt.jwt_token_name', 'token');
@@ -26,17 +26,16 @@ class ApiAuthMiddleware
         $this->_jwt->exp = config('jwt.exp', $this->_jwt->exp);
 
         $errors = $this->_validateToken([$tokenName => $token]);
+
         if( $errors ){
-            return ['code' => 1, 'message' => $errors];
+            return  response( ['code' => 1, 'message' => $errors]);
         }
         if( $this->_isAuth($token) ){
-            return ['code' => 1, 'message' => 'UnAuthorized'];
+            return response(['code' => 1, 'message' => 'UnAuthorized']);
         }
-
         if( $this->_isOutOfTime($token) ){
-            return ['code' => 1, 'message' => 'token expired'];
+            return response(['code' => 1, 'message' => 'token expired']);
         }
-
         return $next($request);
     }
 
