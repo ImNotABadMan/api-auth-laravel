@@ -93,9 +93,9 @@ class BaseBJwtAuth
         $payloadDecode = json_decode(base64_decode($payload), $flag);
 
         return [
-            'header'    => $headerDecode,
-            'payload'   => $payloadDecode,
-            'signature' => $signature
+            "header"    => $headerDecode,
+            "payload"   => $payloadDecode,
+            "signature" => $signature
         ];
     }
 
@@ -110,33 +110,34 @@ class BaseBJwtAuth
         return $headerEncode . '.' . $payloadEncode . '.' . $signature;
     }
 
-    public function outOfTime()
+    public function outOfTime($token = '')
     {
+        if( !$token ){
+            $decode = $this->decodeToken($token);
+        }
+        $this->_payload = $decode['payload'];
         return strtotime($this->_payload['iat']) + $this->_payload['exp'] < time();
     }
 
     public function isAuth($token)
     {
-        $tokenDecode = $this->decodeToken($token, true);
-//        list($header, $payload, $signature) = $tokenDecode;
-        $header = $tokenDecode['header'];
-        $payload = $tokenDecode['payload'];
-        $signature = $tokenDecode['signature'];
+        list($header, $payload, $signature) = explode('.', $token);
 
-        $this->_header['alg'] = $header['alg'];
-        $this->_payload['iat'] = $payload['iat'];
-        $this->_payload['exp'] = $payload['exp'];
+        $decodeArr = $this->decodeToken($token, true);
+
+        $this->_header['alg'] = $decodeArr["header"]['alg'];
+        $this->_payload['iat'] = $decodeArr["payload"]['iat'];
+        $this->_payload['exp'] = $decodeArr["payload"]['exp'];
 
         if( $this->outOfTime() ){
             return false;
         }
 
-
-        if( !isset($header['alg']) ){
+        if( !isset($decodeArr["header"]['alg']) ){
             return false;
         }
 
-        $localSignature = hash_hmac($this->_algMap[$header['alg']], strrchr($token, '.'), $this->_config['jwt_secret']);
+        $localSignature = hash_hmac($this->_algMap[$decodeArr["header"]['alg']], strrchr($token, '.'), $this->_config['jwt_secret']);
 
         if( strpos($signature, $localSignature) !== 0){
             return false;

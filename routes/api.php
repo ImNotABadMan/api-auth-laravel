@@ -16,8 +16,7 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::get('login', 'AuthController@login');
-Route::get('whoiam', 'AuthController@whoiam');
-Route::get('whoiamDecode', 'AuthController@whoiamDecode');
+Route::match(['get', 'post'], 'login', 'AuthController@login')->middleware(['']);
+Route::match(['get', 'post'], 'whoiam', 'AuthController@whoiam');
+Route::match(['get', 'post'], 'whoiamDecode', 'AuthController@whoiamDecode');
 

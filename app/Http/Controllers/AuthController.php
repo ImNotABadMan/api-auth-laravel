@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Jwt\BJwtAuth;
 
@@ -13,15 +14,9 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->_jwt = new BJwtAuth();
-        if( request('token') ){
-            if( !$this->_jwt->isAuth(request('token')) ){
-                return $this->jsonReturn(1, ' UnAuthorized');
-            }
-        }
+        $this->middleware('apiAuth')->except(['login']);
     }
 
-    //
     public function login(Request $request)
     {
         $credit = $request->all(['email', 'password']);
@@ -32,11 +27,12 @@ class AuthController extends Controller
         if( $validator->fails() ){
             return $this->jsonReturn(1,$validator->errors());
         }
-        if( $credit['email'] != 'binz@qq.com' || $credit['password'] != '123456' ){
-            return $this->jsonReturn(1, 'login failed');
-        }
         $jwt = new BJwtAuth();
         $jwt->exp = 60;
+
+        if( !$jwt->isCan($credit) ){
+            return $this->jsonReturn(1, 'UnAuthorized');
+        }
 
         $header = [
             'typ'   => 'jwt',
@@ -65,22 +61,12 @@ class AuthController extends Controller
 
         $token = \request('token');
 
-        if( !$token ){
-            return $this->jsonReturn(1, 'no token');
-        }
-
-        $jwt = new BJwtAuth();
-
-        if( !$jwt->isAuth($token) ){
-            return $this->jsonReturn(1, 'UnAuthorized');
-        }
-
         $tokenDecode = $jwt->decodeToken($token, true);
 
         $payload = [
             'iss'   => 'bin',
             'sub'   => 'test',
-            'iat'   => $tokenDecode['payload']['iat'],
+            'iat'   => $tokenDecode["payload"]['iat'],
             'exp'   => $jwt->exp,
             'email' => 'binz@qq.com',
             'id'    => 1,
@@ -96,18 +82,10 @@ class AuthController extends Controller
 
         $token = \request('token');
 
-        if( !$token ){
-            return $this->jsonReturn(1, 'no token');
-        }
-
         $jwt = new BJwtAuth();
 
-        if( !$jwt->isAuth($token) ){
-            return $this->jsonReturn(1, 'UnAuthorized');
-        }
 
         $tokenDecode = $jwt->decodeToken($token, true);
-
 
         return $this->jsonReturn(0, 'success', $tokenDecode);
     }
